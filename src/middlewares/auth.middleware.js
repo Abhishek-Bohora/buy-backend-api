@@ -1,6 +1,7 @@
-import { User } from "../models/user.model";
+import { User } from "../models/user.model.js";
 import jwt from "jsonwebtoken";
-import { ApiError } from "../../src/utils/ApiError";
+import { ApiError } from "../../src/utils/ApiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {
   const token =
@@ -29,3 +30,16 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     throw new ApiError(401, error?.message || "Invalid access token");
   }
 });
+
+//check if the roles array contains the role that is injected to the req.user?.role by the verifyJWT method
+export const verifyPermission = (roles = []) =>
+  asyncHandler(async (req, res, next) => {
+    if (!req.user?._id) {
+      throw new ApiError(401, "Unauthorized request");
+    }
+    if (roles.includes(req.user?.role)) {
+      next();
+    } else {
+      throw new ApiError(403, "You are not allowed to perform this action");
+    }
+  });
