@@ -10,3 +10,4 @@ export const UserLoginType = {
 export const AvailableUserRoles = Object.values(UserRolesEnum);
 
 export const DB_NAME = "gadget-buy";
+export const MAXIMUM_SUB_IMAGE_COUNT = 4;
