@@ -1,67 +1,63 @@
 import mongoose, { Schema } from "mongoose";
-import { UserRolesEnum, UserLoginType } from "../constants";
+import { UserRolesEnum, AvailableUserRoles } from "../constants.js";
 
-const userSchema = new Schema({
-  avatar: {
-    type: {
-      url: String,
-      localPath: String,
-    },
-    default: {
-      url: `https://via.placeholder.com/200x200.png`,
-      localPath: "",
-    },
-  },
+import bcrypt from "bcrypt";
 
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
-    trim: true,
-    index: true,
+const userSchema = new Schema(
+  {
+    avatar: {
+      type: {
+        url: String,
+        localPath: String,
+      },
+      default: {
+        url: `https://via.placeholder.com/200x200.png`,
+        localPath: "",
+      },
+    },
+
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    role: {
+      type: String,
+      enum: AvailableUserRoles,
+      default: UserRolesEnum.USER,
+      required: true,
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+    },
+
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
   },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
-    trim: true,
-  },
-  role: {
-    type: String,
-    enum: AvailableUserRoles,
-    default: UserRolesEnum.USER,
-    required: true,
-  },
-  password: {
-    type: String,
-    required: [true, "Password is required"],
-  },
-  loginType: {
-    type: String,
-    enum: AvailableSocialLogins,
-    default: UserLoginType.EMAIL_PASSWORD,
-  },
-  isEmailVerified: {
-    type: Boolean,
-    default: false,
-  },
-  refreshToken: {
-    type: String,
-  },
-  forgotPasswordToken: {
-    type: String,
-  },
-  forgotPasswordExpiry: {
-    type: Date,
-  },
-  emailVerificationToken: {
-    type: String,
-  },
-  emailVerificationExpiry: {
-    type: Date,
-  },
+  { timestamps: true }
+);
+
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
 });
 
-export const User = mongoose.Model("User", userSchema);
+userSchema.methods.isPasswordCorrect = async function (password) {
+  return await bcrypt.compare(password, this.password);
+};
+
+export const User = mongoose.model("User", userSchema);
