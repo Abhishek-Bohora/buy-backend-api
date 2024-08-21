@@ -6,6 +6,7 @@ import { getStaticFilePath, getLocalPath } from "../utils/helpers.js";
 import { Product } from "../models/product.model.js";
 import { getMongoosePaginationOptions } from "../utils/helpers.js";
 
+// only admin
 const createProduct = asyncHandler(async (req, res) => {
   const { name, description, category, price, stock } = req.body;
 
@@ -60,6 +61,7 @@ const createProduct = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, product, "Product created successfully"));
 });
 
+// all users
 const getAllProducts = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   const productAggregate = Product.aggregate([{ $match: {} }]);
