@@ -3,6 +3,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import mongoose from "mongoose";
 import { EcomOrder } from "../models/order.model.js";
+import { Cart } from "../models/cart.model.js";
+import { getCart } from "../controllers/cart.controller.js";
 
 const khaltiBaseUrl = {
   sandbox: "https://a.khalti.com/api/v2/",
@@ -40,25 +42,37 @@ const khaltiApi = async (endpoint, body = {}) => {
 };
 
 const generateKhaltiOrder = asyncHandler(async (req, res) => {
+  //TODO: ZOD VALIDATION
+  const { addressLine1, addressLine2, district, city } = req.body;
+
+  if (!addressLine1 || !district || !city) {
+    throw new ApiError(
+      400,
+      "Missing required fields: addressLine1, district, and city are required." +
+        error.message
+    );
+  }
+
   try {
-    const fakeOrderItems = [
-      {
-        productId: new mongoose.Types.ObjectId(),
-        quantity: 1,
-      },
-      {
-        productId: new mongoose.Types.ObjectId(),
-        quantity: 2,
-      },
-    ];
-    const fakeOrderPrice = 300;
-    const fakeDiscountedPrice = 200;
+    //finding the cart of the currently logged in user
+    const cart = await Cart.findOne({
+      owner: req.user._id,
+    });
+
+    if (!cart || !cart.items?.length) {
+      throw new ApiError(400, "User cart is empty");
+    }
+
+    const orderItems = cart.items; // these items are used further to set product stock
+    const userCart = await getCart(req.user._id);
+
+    const totalPrice = userCart.cartTotal;
 
     // Initiate the Khalti payment request
     const response = await khaltiApi("epayment/initiate/", {
       return_url: "http://localhost:8080/api/v1/ecommerce/orders/payment",
       website_url: "http://localhost:8080/",
-      amount: Math.round(fakeDiscountedPrice * 100), // amount in paisa
+      amount: Math.round(totalPrice * 100), // amount in paisa
       purchase_order_id: "order-" + Date.now(),
       purchase_order_name: "Fake Order",
       customer_info: {
@@ -81,16 +95,16 @@ const generateKhaltiOrder = asyncHandler(async (req, res) => {
       // Create an order while we generate Khalti session
       const unpaidOrder = await EcomOrder.create({
         address: {
-          addressLine1: "Test Address Line 1",
-          addressLine2: "Test Address Line 2",
-          city: "Test City",
-          District: "Test District",
+          addressLine1: addressLine1,
+          addressLine2: addressLine2,
+          city: city,
+          District: district,
         },
-        customer: req._id, // Fake user ID
-        items: fakeOrderItems,
-        orderPrice: fakeOrderPrice,
-        discountedOrderPrice: fakeDiscountedPrice,
-        paymentProvider: "KHALTI", // Ensure this matches your enum
+        customer: req.user._id,
+        items: orderItems,
+        orderPrice: totalPrice,
+        discountedOrderPrice: 0,
+        paymentProvider: "KHALTI",
         paymentId: khaltiOrder.pidx,
       });
 
