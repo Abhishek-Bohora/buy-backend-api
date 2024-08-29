@@ -4,6 +4,7 @@ import { validate } from "../validators/validate.js";
 import {
   createProduct,
   getAllProducts,
+  getProductById,
 } from "../controllers/product.controller.js";
 import { UserRolesEnum } from "../constants.js";
 import { createProductValidator } from "../validators/product.validator.js";
@@ -35,5 +36,7 @@ router
     validate,
     createProduct
   );
+
+router.route("/:id").get(getProductById);
 
 export default router;

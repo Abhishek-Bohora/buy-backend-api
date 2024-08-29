@@ -5,6 +5,7 @@ import { addItemOrUpdateItemQuantityValidator } from "../validators/cart.validat
 import {
   addItemOrUpdateItemQuantity,
   getUserCart,
+  deleteItemFromCart,
 } from "../controllers/cart.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -20,6 +21,11 @@ router
     addItemOrUpdateItemQuantityValidator(),
     validate,
     addItemOrUpdateItemQuantity
+  )
+  .delete(
+    mongoIdPathVariableValidator("productId"),
+    validate,
+    deleteItemFromCart
   );
 
 export default router;

@@ -168,7 +168,7 @@ const verifyKhaltiPayment = asyncHandler(async (req, res) => {
     }
 
     // Redirect to a success page or send a success response
-    return res.redirect("/payment-success"); // You need to create this route/page
+    return res.redirect("http://localhost:3000/product"); // You need to create this route/page
   } else {
     throw new ApiError(400, "Payment verification failed");
   }

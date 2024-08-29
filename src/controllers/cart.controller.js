@@ -99,4 +99,27 @@ const addItemOrUpdateItemQuantity = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, newCart, "Item added successfully"));
 });
 
-export { addItemOrUpdateItemQuantity, getUserCart };
+const deleteItemFromCart = asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+
+  const cart = await Cart.findOne({ owner: req.user._id });
+
+  if (!cart) {
+    throw new ApiError(404, "Cart not found");
+  }
+
+  cart.items = cart.items.filter(
+    (item) => item.productId.toString() !== productId
+  );
+
+  await cart.save({ validateBeforeSave: true });
+
+  const updatedCart = await getCart(req.user._id);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, updatedCart, "Item removed from cart successfully")
+    );
+});
+export { addItemOrUpdateItemQuantity, getUserCart, deleteItemFromCart };
